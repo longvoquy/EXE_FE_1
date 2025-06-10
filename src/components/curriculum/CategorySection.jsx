@@ -3,34 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { getCourseNamesByGrade, courseImages } from '../../data/courseData';
 
-// Helper function moved outside component
-function getCourseNamesByGrade(grade, categoryType) {
-  // Giả sử courses là một object chứa dữ liệu khóa học
-  const allCourses = courses[grade] || [];
-
-  if (categoryType === 'math') {
-    return allCourses.filter(course =>
-      course.toLowerCase().includes('số') ||
-      course.toLowerCase().includes('toán') ||
-      course.toLowerCase().includes('đếm') ||
-      course.toLowerCase().includes('number')
-    );
-  } else if (categoryType === 'vietnamese') {
-    return allCourses.filter(course =>
-      !course.toLowerCase().includes('số') &&
-      !course.toLowerCase().includes('toán') &&
-      !course.toLowerCase().includes('đếm') &&
-      !course.toLowerCase().includes('number')
-    );
-  }
-
-  return allCourses;
-}
-
 export default function CategorySection({ title, active, categoryType }) {
   const navigate = useNavigate();
   const grades = ['Pre-K', 'K', '1', '2', '3', '4', '5'];
   const [selectedGrade, setSelectedGrade] = React.useState('Pre-K');
+
+  // Lấy danh sách khóa học dựa trên grade và categoryType
+  const currentCourseNames = getCourseNamesByGrade(selectedGrade, categoryType);
 
   const handleCourseClick = (lessonIndex, courseName) => {
     if (categoryType === 'math') {
@@ -39,8 +18,6 @@ export default function CategorySection({ title, active, categoryType }) {
       navigate(`/lesson-detail/vietnamese/lesson${lessonIndex + 1}`);
     }
   };
-
-  const currentCourseNames = getCourseNamesByGrade(selectedGrade, categoryType);
 
   return (
     <div
@@ -70,14 +47,15 @@ export default function CategorySection({ title, active, categoryType }) {
 
       {/* Danh sách khóa học */}
       <div className="grid grid-cols-4 gap-6">
-        {currentCourseNames.map((course) => {
-          const getDescription = () => course.description;
-          const getIcon = () => course.tag === 'math' ? "🔢" : "📚"; // Sử dụng course.tag
+        {currentCourseNames.map((course, index) => {
+          const getDescription = () => course.description || 'Mô tả khóa học';
+          const getIcon = () => course.tag === 'math' ? "🔢" : "📚";
+          const courseName = course.title || course.name || `Course ${index + 1}`;
 
           return (
             <div
-              key={course._id} // Sử dụng _id thay vì index
-              onClick={() => handleCourseClick(course.lessonId, course.title)} // Sử dụng lessonId từ dữ liệu
+              key={course._id || course.id || index}
+              onClick={() => handleCourseClick(course.lessonId || index, courseName)}
               className={`bg-[#302f5b] rounded-md text-white text-xs p-4 min-w-[220px] min-h-[220px] shadow-md hover:brightness-110 transition flex flex-col cursor-pointer relative ${course.tag === 'math' ? 'border-2 border-green-400' : 'border-2 border-purple-400'}`}
             >
               {/* Course Type Badge */}
@@ -99,7 +77,7 @@ export default function CategorySection({ title, active, categoryType }) {
                 </div>
               )}
 
-              <div className="font-semibold text-base mb-2">{course.title}</div>
+              <div className="font-semibold text-base mb-2">{course.title || courseName}</div>
               <div className="text-xs">{getDescription()}</div>
 
               {/* Progress indicator */}
@@ -127,7 +105,7 @@ export default function CategorySection({ title, active, categoryType }) {
 CategorySection.propTypes = {
   title: PropTypes.string.isRequired,
   active: PropTypes.bool.isRequired,
-  categoryType: PropTypes.oneOf(['math', 'vietnamese']).isRequired // Giữ nguyên tên prop này
+  categoryType: PropTypes.oneOf(['math', 'vietnamese']).isRequired
 };
 
 CategorySection.defaultProps = {
